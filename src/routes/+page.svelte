@@ -6,6 +6,7 @@
 	import DataTable from '$lib/components/site-elements/dataTable.svelte';
 	import AmountWidget from '$lib/components/site-elements/amtWidget.svelte';
 	import NumberWidget from '$lib/components/site-elements/numWidget.svelte';
+	import ToDo from '$lib/components/site-elements/toDo.svelte';
 
 	import '../style.css';
 
@@ -155,6 +156,9 @@
 		<div class="number-widget">
 			<NumberWidget rows={rawData} />
 		</div>
+	</div>
+	<div class="to-do">
+		<ToDo />
 	</div>
 </div>
 

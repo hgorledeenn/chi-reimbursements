@@ -208,7 +208,7 @@
 		height: 48px;
 		padding: 4px;
 
-		background-color: #e5e5e5;
+		background-color: #fff;
 		border-radius: 999px;
 
 		margin: 20px auto;

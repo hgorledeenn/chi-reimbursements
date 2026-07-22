@@ -164,6 +164,7 @@
 		grid-template-columns: 2fr 1fr;
 		gap: 20px;
 		margin-top: 30px;
+		margin-bottom: 100px;
 	}
 
 	.amount-widget {

@@ -2,8 +2,10 @@
 	import * as d3 from 'd3';
 	import { onMount } from 'svelte';
 
-    import Header from '$lib/components/site-elements/header.svelte'
-    import DataTable from '$lib/components/site-elements/dataTable.svelte';
+	import Header from '$lib/components/site-elements/header.svelte';
+	import DataTable from '$lib/components/site-elements/dataTable.svelte';
+	import AmountWidget from '$lib/components/site-elements/amtWidget.svelte';
+	import NumberWidget from '$lib/components/site-elements/numWidget.svelte';
 
 	import '../style.css';
 
@@ -45,6 +47,7 @@
 
 	function changeView(view) {
 		tableView = view;
+		currentPage = 1;
 
 		if (view === 'recent') {
 			sortState.column = 'paymentDate';
@@ -86,6 +89,7 @@
 	});
 
 	function handleSort(column) {
+		currentPage = 1;
 		if (sortState.column === column) {
 			// clicking the same column reverses direction
 			sortState.direction = sortState.direction === 'desc' ? 'asc' : 'desc';
@@ -95,25 +99,91 @@
 			sortState.direction = 'desc';
 		}
 	}
+
+	// table pagination
+	let currentPage = $state(1);
+	const rowsPerPage = 500;
+
+	let pagedData = $derived.by(() => {
+		const start = (currentPage - 1) * rowsPerPage;
+		const end = start + rowsPerPage;
+
+		return sortedRows.slice(start, end);
+	});
+
+	let totalPages = $derived(Math.ceil(sortedRows.length / rowsPerPage));
+
+	let numRows = $derived(sortedRows.length);
+
+	function nextPage() {
+		if (currentPage < totalPages) {
+			currentPage++;
+		}
+	}
+
+	function previousPage() {
+		if (currentPage > 1) {
+			currentPage--;
+		}
+	}
 </script>
 
-
 <div class="dashboard">
-    <div class="header">
-        <Header />
-    </div>
+	<div class="header">
+		<Header />
+	</div>
 	<div class="table">
 		<DataTable
-			rows={sortedRows}
+			rows={pagedData}
 			view={tableView}
 			onViewChange={changeView}
 			{sortState}
 			onSort={handleSort}
+			{currentPage}
+			{totalPages}
+			onNextPage={nextPage}
+			onPreviousPage={previousPage}
+			{rowsPerPage}
+			{numRows}
 		/>
+	</div>
+	<div class="widgets">
+		<div class="amount-widget">
+			<AmountWidget rows={rawData} />
+		</div>
+
+		<div class="number-widget">
+			<NumberWidget rows={rawData} />
+		</div>
 	</div>
 </div>
 
 <style>
+	.widgets {
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		gap: 20px;
+		margin-top: 30px;
+	}
+
+	.amount-widget {
+		width: 100%;
+		background: #ffffff;
+		border-radius: 16px;
+		padding: 20px;
+		box-shadow:
+			0 1px 3px rgba(0, 0, 0, 0.08),
+			0 8px 20px rgba(0, 0, 0, 0.04);
+
+		border: 1px solid #e8e8e8;
+
+		box-sizing: border-box;
+	}
+
+	.number-widget {
+		width: 100%;
+	}
+
 	.dashboard {
 		max-width: 1200px;
 		align-content: center;

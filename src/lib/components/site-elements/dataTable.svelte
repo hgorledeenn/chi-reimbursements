@@ -2,7 +2,23 @@
 	import * as d3 from 'd3';
 	import { fade, fly } from 'svelte/transition';
 
-	let { rows = [], view, onViewChange, sortState, onSort } = $props();
+	let {
+		rows = [],
+		view,
+		onViewChange,
+		sortState,
+		onSort,
+		currentPage,
+		totalPages,
+		onNextPage,
+		onPreviousPage,
+		rowsPerPage,
+		numRows
+	} = $props();
+
+	let numResultsDisplay = $derived(
+    	Math.min(currentPage * rowsPerPage, numRows)
+	);
 
 	const formatDate = d3.timeFormat('%b %d, %Y');
 
@@ -41,21 +57,31 @@
 	};
 </script>
 
-<div class="toggle-wrapper">
-	<div class="toggle-highlight" class:department={view === 'department'}></div>
+<div class="table-toolbar">
+	<div></div>
+	<div class="toggle-wrapper">
+		<div class="toggle-highlight" class:department={view === 'department'}></div>
 
-	<button class:active={view === 'recent'} onclick={() => onViewChange('recent')}>
-		Most Recent
-	</button>
+		<button class:active={view === 'recent'} onclick={() => onViewChange('recent')}>
+			Most Recent
+		</button>
 
-	<button class:active={view === 'department'} onclick={() => onViewChange('department')}>
-		By Department
-	</button>
+		<button class:active={view === 'department'} onclick={() => onViewChange('department')}>
+			By Department
+		</button>
+	</div>
+
+	<div class="table-info">
+		<p>
+			Showing {currentPage * rowsPerPage - rowsPerPage + 1} - {numResultsDisplay} of {numRows}
+			results
+		</p>
+	</div>
 </div>
 
 <div class="table-wrapper">
 	{#if view === 'recent'}
-		<table 
+		<table
 			class="individual-reimbursements"
 			in:fly={{ y: 50, duration: 500 }}
 			out:fade={{ duration: 150 }}
@@ -79,9 +105,9 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each rows.slice(0, 100) as row, index}
+				{#each rows as row, index}
 					<tr>
-						<td style="text-align: center;">{index + 1}</td>
+						<td style="text-align: center;">{(currentPage - 1) * rowsPerPage + index + 1}</td>
 						<td style="text-align: center;">{formatDate(new Date(row.paymentDate))}</td>
 						<td class="column-amount">{formatMoney(row.amount)}</td>
 						<td>{row.department}</td>
@@ -92,7 +118,7 @@
 			</tbody>
 		</table>
 	{:else if view === 'department'}
-		<table 
+		<table
 			class="individual-reimbursements"
 			in:fly={{ y: 50, duration: 500 }}
 			out:fade={{ duration: 150 }}
@@ -116,9 +142,9 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each rows.slice(0, 100) as row, index}
+				{#each rows as row, index}
 					<tr>
-						<td style="text-align: center;">{index + 1}</td>
+						<td style="text-align: center;">{(currentPage - 1) * rowsPerPage + index + 1}</td>
 						<td>{row.department}</td>
 						<td class="column-amount">{formatMoney(row.totalAmount)}</td>
 						<td style="text-align:center;">{formatNumber(row.totalReimbursements)}</td>
@@ -131,9 +157,51 @@
 		</table>
 	{/if}
 </div>
+{#if totalPages > 1}
+	<div class="pagination">
+		<button onclick={onPreviousPage} disabled={currentPage === 1}> ← Previous </button>
+
+		<span>
+			Page {currentPage} of {totalPages}
+		</span>
+
+		<button onclick={onNextPage} disabled={currentPage === totalPages}> Next → </button>
+	</div>
+{/if}
 
 <style>
+
+	.table-toolbar {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		margin: 20px 0;
+	}
+
+	.pagination {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 20px;
+
+		margin-top: 20px;
+	}
+
+	.pagination button {
+		padding: 8px 18px;
+		border-radius: 8px;
+		border: 1px solid #ccc;
+		cursor: pointer;
+	}
+
+	.pagination button:disabled {
+		opacity: 0.4;
+		cursor: default;
+	}
+
 	.toggle-wrapper {
+		justify-self: center;
+		margin: 0;
 		position: relative;
 		display: flex;
 		width: 320px;
@@ -144,6 +212,10 @@
 		border-radius: 999px;
 
 		margin: 20px auto;
+	}
+
+	.table-info {
+		justify-self: end;
 	}
 
 	.toggle-wrapper button {
@@ -193,7 +265,7 @@
 		overflow-y: auto;
 		border: 1px solid #000;
 		overflow-x: auto;
-		border-radius: 25px;
+		border-radius: 10px;
 	}
 
 	table {
@@ -218,6 +290,7 @@
 	td {
 		padding: 10px;
 		vertical-align: middle;
+		color: #000;
 	}
 
 	.column-amount {
@@ -232,8 +305,12 @@
 		background-color: #f2f2f2;
 	}
 
+	tr:nth-child(odd) {
+		background-color: #ffffff;
+	}
+
 	/* incase I want some state changes on:hover */
-	tr:hover {
+	tr:hover td {
 		background-color: #e40028;
 		color: #fff;
 	}
